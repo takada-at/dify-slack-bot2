@@ -1,6 +1,2 @@
 dify_plugin>=0.2.0,<0.3.0
 slack_sdk==3.36.0
-
-# Development dependencies
-ruff>=0.1.0
-mypy>=1.7.0
