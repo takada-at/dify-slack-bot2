@@ -1,0 +1,5 @@
+path: "/uwu/slack-bot2/uwu"
+method: "GET"
+extra:
+  python:
+    source: "endpoints/slack-bot2.py"
