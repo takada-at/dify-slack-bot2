@@ -34,5 +34,27 @@ settings:
       zh_Hans: 你想要用来回答 Slack 消息的应用
       pt_BR: o app que você deseja usar para responder mensagens do Slack
       ja_JP: あなたが Slack メッセージに回答するために使用するアプリ
+  - name: target_reactions
+    type: text-input
+    required: false
+    label:
+      en_US: Target Reactions
+      zh_Hans: 目标反应
+      pt_BR: Reações Alvo
+      ja_JP: 対象リアクション
+    placeholder:
+      en_US: Comma-separated reaction names (e.g., thumbsup,heart,fire)
+      zh_Hans: 逗号分隔的反应名称 (例如: thumbsup,heart,fire)
+      pt_BR: Nomes de reações separados por vírgula (ex: thumbsup,heart,fire)
+      ja_JP: カンマ区切りのリアクション名 (例: thumbsup,heart,fire)
+  - name: enable_thread_reply
+    type: boolean
+    required: false
+    label:
+      en_US: Enable Thread Reply
+      zh_Hans: 启用线程回复
+      pt_BR: Habilitar Resposta em Thread
+      ja_JP: スレッド返信を有効にする
+    default: false
 endpoints:
   - endpoints/slack-bot2.yaml
