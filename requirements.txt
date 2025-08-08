@@ -1,2 +1,4 @@
 dify_plugin>=0.2.0,<0.3.0
 slack_sdk==3.36.0
+pytest>=7.0.0
+pytest-mock>=3.10.0
