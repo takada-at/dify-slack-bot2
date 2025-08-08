@@ -10,7 +10,7 @@ from slack_sdk.errors import SlackApiError
 from werkzeug import Request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-spec = importlib.util.spec_from_file_location("slack_bot2", "/home/ubuntu/dify-slack-bot2/endpoints/slack-bot2.py")
+spec = importlib.util.spec_from_file_location("slack_bot2", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "endpoints", "slack-bot2.py"))
 if spec is None or spec.loader is None:
     raise ImportError("Could not load slack-bot2.py module")
 slack_bot2_module = importlib.util.module_from_spec(spec)
@@ -20,7 +20,7 @@ SlackBot2Endpoint = slack_bot2_module.SlackBot2Endpoint
 
 class TestSlackBot2Endpoint:
 
-    @pytest.fixture  # type: ignore[misc]
+    @pytest.fixture
     def endpoint(self) -> Any:
         mock_session = Mock()
         mock_session.app = Mock()
@@ -28,13 +28,13 @@ class TestSlackBot2Endpoint:
         endpoint = SlackBot2Endpoint(mock_session)
         return endpoint
 
-    @pytest.fixture  # type: ignore[misc]
+    @pytest.fixture
     def mock_request(self) -> Mock:
         request = Mock(spec=Request)
         request.headers = {}
         return request
 
-    @pytest.fixture  # type: ignore[misc]
+    @pytest.fixture
     def basic_settings(self) -> dict[str, Any]:
         return {
             "bot_token": "xoxb-test-token",
@@ -44,14 +44,14 @@ class TestSlackBot2Endpoint:
             "target_reactions": ""
         }
 
-    @pytest.fixture  # type: ignore[misc]
+    @pytest.fixture
     def url_verification_data(self) -> dict[str, Any]:
         return {
             "type": "url_verification",
             "challenge": "test-challenge-string"
         }
 
-    @pytest.fixture  # type: ignore[misc]
+    @pytest.fixture
     def app_mention_data(self) -> dict[str, Any]:
         return {
             "type": "event_callback",
@@ -75,7 +75,7 @@ class TestSlackBot2Endpoint:
             }
         }
 
-    @pytest.fixture  # type: ignore[misc]
+    @pytest.fixture
     def reaction_added_data(self) -> dict[str, Any]:
         return {
             "type": "event_callback",
