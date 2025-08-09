@@ -34,7 +34,11 @@ class SlackBot2Endpoint(Endpoint):
             event = data.get("event")
             if event.get("type") == "app_mention":
                 message = event.get("text", "")
-                files = event.get("files", []) if settings.get("enable_file_attachments") else []
+                files = (
+                    event.get("files", [])
+                    if settings.get("enable_file_attachments")
+                    else []
+                )
                 if message.startswith("<@"):
                     message = message.split("> ", 1)[1] if "> " in message else message
                     channel = event.get("channel", "")
@@ -168,7 +172,9 @@ class SlackBot2Endpoint(Endpoint):
                             dify_file = self.session.file.upload(
                                 filename=file_data_response.get("name", "unknown"),
                                 content=response.content,
-                                mimetype=file_data_response.get("mimetype", "application/octet-stream")
+                                mimetype=file_data_response.get(
+                                    "mimetype", "application/octet-stream"
+                                ),
                             )
                             uploaded_files.append(dify_file)
             except Exception as e:

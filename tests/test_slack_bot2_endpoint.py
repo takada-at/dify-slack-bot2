@@ -516,7 +516,7 @@ class TestSlackBot2Endpoint:
                         "id": "F123456789",
                         "name": "test.txt",
                         "mimetype": "text/plain",
-                        "size": 100
+                        "size": 100,
                     }
                 ],
                 "blocks": [
@@ -556,8 +556,8 @@ class TestSlackBot2Endpoint:
                 "name": "test.txt",
                 "url_private": "https://files.slack.com/test.txt",
                 "mimetype": "text/plain",
-                "size": 100
-            }
+                "size": 100,
+            },
         }
         mock_requests_get.return_value.status_code = 200
         mock_requests_get.return_value.content = b"test file content"
@@ -593,7 +593,9 @@ class TestSlackBot2Endpoint:
         mock_webclient_class.return_value = mock_webclient
         mock_webclient.chat_postMessage.return_value = {"ok": True}
 
-        endpoint.session.app.chat.invoke.return_value = {"answer": "Response without files"}
+        endpoint.session.app.chat.invoke.return_value = {
+            "answer": "Response without files"
+        }
         mock_request.get_json.return_value = app_mention_with_files_data
 
         response = endpoint._invoke(mock_request, {}, basic_settings)
@@ -625,8 +627,8 @@ class TestSlackBot2Endpoint:
                 "name": "test.txt",
                 "url_private": "https://files.slack.com/test.txt",
                 "mimetype": "text/plain",
-                "size": 100
-            }
+                "size": 100,
+            },
         }
         mock_requests_get.return_value.status_code = 404
         mock_webclient.chat_postMessage.return_value = {"ok": True}
