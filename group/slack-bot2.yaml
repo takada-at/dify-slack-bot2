@@ -56,5 +56,14 @@ settings:
       pt_BR: Habilitar Resposta em Thread
       ja_JP: スレッド返信を有効にする
     default: false
+  - name: enable_file_attachments
+    type: boolean
+    required: false
+    label:
+      en_US: Enable File Attachments
+      zh_Hans: 启用文件附件
+      pt_BR: Habilitar Anexos de Arquivo
+      ja_JP: ファイル添付を有効にする
+    default: false
 endpoints:
   - endpoints/slack-bot2.yaml

@@ -2,6 +2,7 @@ import json
 import traceback
 from collections.abc import Mapping
 
+import requests
 from dify_plugin import Endpoint
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -33,6 +34,11 @@ class SlackBot2Endpoint(Endpoint):
             event = data.get("event")
             if event.get("type") == "app_mention":
                 message = event.get("text", "")
+                files = (
+                    event.get("files", [])
+                    if settings.get("enable_file_attachments")
+                    else []
+                )
                 if message.startswith("<@"):
                     message = message.split("> ", 1)[1] if "> " in message else message
                     channel = event.get("channel", "")
@@ -44,7 +50,7 @@ class SlackBot2Endpoint(Endpoint):
                         event.get("ts") if settings.get("enable_thread_reply") else None
                     )
                     return self._process_dify_request(
-                        message, channel, blocks, thread_ts, settings
+                        message, channel, blocks, thread_ts, settings, files
                     )
                 else:
                     return Response(status=200, response="ok")
@@ -72,7 +78,7 @@ class SlackBot2Endpoint(Endpoint):
                         {"type": "section", "text": {"type": "mrkdwn", "text": message}}
                     ]
                     return self._process_dify_request(
-                        message, channel, blocks, thread_ts, settings
+                        message, channel, blocks, thread_ts, settings, []
                     )
                 else:
                     return Response(status=200, response="ok")
@@ -88,15 +94,33 @@ class SlackBot2Endpoint(Endpoint):
         blocks: list,
         thread_ts: str | None,
         settings: Mapping,
+        files: list | None = None,
     ) -> Response:
         """Process request to Dify and post response to Slack"""
         token = settings.get("bot_token")
         client = WebClient(token=token)
+
+        uploaded_files: list = []
+        if files and settings.get("enable_file_attachments"):
+            uploaded_files = self._upload_slack_files_to_dify(files, client)
+            if uploaded_files:
+                file_names = []
+                for file_info in uploaded_files:
+                    if isinstance(file_info, dict):
+                        file_names.append(file_info.get("filename", "unknown"))
+                    else:
+                        file_names.append("unknown")
+                file_summary = f"\n\n添付ファイル: {', '.join(file_names)}"
+                message += file_summary
+
         try:
+            inputs = {}
+            if uploaded_files:
+                inputs["files"] = uploaded_files
             response = self.session.app.chat.invoke(
                 app_id=settings["app"]["app_id"],
                 query=message,
-                inputs={},
+                inputs=inputs,
                 response_mode="blocking",
             )
             try:
@@ -131,3 +155,37 @@ class SlackBot2Endpoint(Endpoint):
                 + str(err),
                 content_type="text/plain",
             )
+
+    def _upload_slack_files_to_dify(self, files: list, client: WebClient) -> list:
+        """Download files from Slack and upload them to Dify"""
+        uploaded_files = []
+        for file_info in files:
+            try:
+                file_id = file_info.get("id")
+                if not file_id:
+                    continue
+
+                file_response = client.files_info(file=file_id)
+                if file_response.get("ok"):
+                    file_data_response: dict = file_response.get("file", {})
+                    url_private = file_data_response.get("url_private")
+
+                    if url_private:
+                        headers = {"Authorization": f"Bearer {client.token}"}
+                        response = requests.get(url_private, headers=headers)
+
+                        if response.status_code == 200:
+                            upload_response = self.session.file.upload(
+                                filename=file_data_response.get("name", "unknown"),
+                                content=response.content,
+                                mimetype=file_data_response.get(
+                                    "mimetype", "application/octet-stream"
+                                ),
+                            )
+                            file_info = upload_response.to_app_parameter()
+                            uploaded_files.append(file_info)
+            except Exception as e:
+                print(f"Error processing file {file_info.get('id', 'unknown')}: {e}")
+                continue
+
+        return uploaded_files
