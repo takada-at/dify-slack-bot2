@@ -354,7 +354,7 @@ class TestSlackBot2Endpoint:
 
         blocks = [{"text": {"text": "original"}}]
         endpoint._process_dify_request(
-            "test", "C123456", blocks, "1234567890.123456", basic_settings
+            "test", "C123456", blocks, "1234567890.123456", basic_settings, []
         )
 
         call_args = mock_webclient.chat_postMessage.call_args[1]
@@ -372,7 +372,7 @@ class TestSlackBot2Endpoint:
 
         blocks = [{"elements": [{"elements": [{"text": "original"}]}]}]
         response = endpoint._process_dify_request(
-            "test", "C123456", blocks, None, basic_settings
+            "test", "C123456", blocks, None, basic_settings, []
         )
 
         assert response.status_code == 200
@@ -391,7 +391,7 @@ class TestSlackBot2Endpoint:
         endpoint.session.app.chat.invoke.return_value = {"answer": "Test response"}
 
         response = endpoint._process_dify_request(
-            "test", "C123456", [], None, basic_settings
+            "test", "C123456", [], None, basic_settings, []
         )
         assert response.status_code == 200
 
@@ -405,7 +405,7 @@ class TestSlackBot2Endpoint:
         endpoint.session.app.chat.invoke.side_effect = Exception("Dify API Error")
 
         response = endpoint._process_dify_request(
-            "test", "C123456", [], None, basic_settings
+            "test", "C123456", [], None, basic_settings, []
         )
 
         assert response.status_code == 200
@@ -427,7 +427,7 @@ class TestSlackBot2Endpoint:
         }
 
         response = endpoint._process_dify_request(
-            "test", "C123456", [], None, basic_settings
+            "test", "C123456", [], None, basic_settings, []
         )
 
         assert response.status_code == 200
@@ -501,3 +501,138 @@ class TestSlackBot2Endpoint:
             assert response.status_code == 200
             call_args = mock_webclient.chat_postMessage.call_args[1]
             assert call_args["channel"] == ""
+
+    @pytest.fixture
+    def app_mention_with_files_data(self) -> dict[str, Any]:
+        return {
+            "type": "event_callback",
+            "event": {
+                "type": "app_mention",
+                "text": "<@U123456> Please analyze this file",
+                "channel": "C123456",
+                "ts": "1234567890.123456",
+                "files": [
+                    {
+                        "id": "F123456789",
+                        "name": "test.txt",
+                        "mimetype": "text/plain",
+                        "size": 100
+                    }
+                ],
+                "blocks": [
+                    {
+                        "elements": [
+                            {
+                                "elements": [
+                                    {"text": "<@U123456>"},
+                                    {"text": " Please analyze this file"},
+                                ]
+                            }
+                        ]
+                    }
+                ],
+            },
+        }
+
+    @patch.object(slack_bot2_module, "WebClient")
+    @patch("requests.get")
+    def test_invoke_app_mention_with_files_enabled(
+        self,
+        mock_requests_get: Any,
+        mock_webclient_class: Any,
+        endpoint: Any,
+        mock_request: Any,
+        basic_settings: Any,
+        app_mention_with_files_data: Any,
+    ) -> None:
+        basic_settings["enable_file_attachments"] = True
+        mock_webclient = Mock()
+        mock_webclient_class.return_value = mock_webclient
+        mock_webclient.token = "xoxb-test-token"
+        mock_webclient.files_info.return_value = {
+            "ok": True,
+            "file": {
+                "id": "F123456789",
+                "name": "test.txt",
+                "url_private": "https://files.slack.com/test.txt",
+                "mimetype": "text/plain",
+                "size": 100
+            }
+        }
+        mock_requests_get.return_value.status_code = 200
+        mock_requests_get.return_value.content = b"test file content"
+        mock_webclient.chat_postMessage.return_value = {"ok": True}
+
+        endpoint.session.app.chat.invoke.return_value = {"answer": "File analyzed"}
+        mock_request.get_json.return_value = app_mention_with_files_data
+
+        response = endpoint._invoke(mock_request, {}, basic_settings)
+
+        assert response.status_code == 200
+        endpoint.session.app.chat.invoke.assert_called_once()
+        call_args = endpoint.session.app.chat.invoke.call_args[1]
+        assert "files" in call_args["inputs"]
+        assert len(call_args["inputs"]["files"]) == 1
+        assert call_args["inputs"]["files"][0]["name"] == "test.txt"
+
+    @patch.object(slack_bot2_module, "WebClient")
+    def test_invoke_app_mention_with_files_disabled(
+        self,
+        mock_webclient_class: Any,
+        endpoint: Any,
+        mock_request: Any,
+        basic_settings: Any,
+        app_mention_with_files_data: Any,
+    ) -> None:
+        basic_settings["enable_file_attachments"] = False
+        mock_webclient = Mock()
+        mock_webclient_class.return_value = mock_webclient
+        mock_webclient.chat_postMessage.return_value = {"ok": True}
+
+        endpoint.session.app.chat.invoke.return_value = {"answer": "Response without files"}
+        mock_request.get_json.return_value = app_mention_with_files_data
+
+        response = endpoint._invoke(mock_request, {}, basic_settings)
+
+        assert response.status_code == 200
+        endpoint.session.app.chat.invoke.assert_called_once()
+        call_args = endpoint.session.app.chat.invoke.call_args[1]
+        assert call_args["inputs"] == {}
+
+    @patch.object(slack_bot2_module, "WebClient")
+    @patch("requests.get")
+    def test_download_slack_files_error_handling(
+        self,
+        mock_requests_get: Any,
+        mock_webclient_class: Any,
+        endpoint: Any,
+        mock_request: Any,
+        basic_settings: Any,
+        app_mention_with_files_data: Any,
+    ) -> None:
+        basic_settings["enable_file_attachments"] = True
+        mock_webclient = Mock()
+        mock_webclient_class.return_value = mock_webclient
+        mock_webclient.token = "xoxb-test-token"
+        mock_webclient.files_info.return_value = {
+            "ok": True,
+            "file": {
+                "id": "F123456789",
+                "name": "test.txt",
+                "url_private": "https://files.slack.com/test.txt",
+                "mimetype": "text/plain",
+                "size": 100
+            }
+        }
+        mock_requests_get.return_value.status_code = 404
+        mock_webclient.chat_postMessage.return_value = {"ok": True}
+
+        endpoint.session.app.chat.invoke.return_value = {"answer": "Response"}
+        mock_request.get_json.return_value = app_mention_with_files_data
+
+        response = endpoint._invoke(mock_request, {}, basic_settings)
+
+        assert response.status_code == 200
+        endpoint.session.app.chat.invoke.assert_called_once()
+        call_args = endpoint.session.app.chat.invoke.call_args[1]
+        assert call_args["inputs"] == {}

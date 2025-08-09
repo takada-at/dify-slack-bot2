@@ -2,6 +2,7 @@ import json
 import traceback
 from collections.abc import Mapping
 
+import requests
 from dify_plugin import Endpoint
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -33,6 +34,7 @@ class SlackBot2Endpoint(Endpoint):
             event = data.get("event")
             if event.get("type") == "app_mention":
                 message = event.get("text", "")
+                files = event.get("files", []) if settings.get("enable_file_attachments") else []
                 if message.startswith("<@"):
                     message = message.split("> ", 1)[1] if "> " in message else message
                     channel = event.get("channel", "")
@@ -44,7 +46,7 @@ class SlackBot2Endpoint(Endpoint):
                         event.get("ts") if settings.get("enable_thread_reply") else None
                     )
                     return self._process_dify_request(
-                        message, channel, blocks, thread_ts, settings
+                        message, channel, blocks, thread_ts, settings, files
                     )
                 else:
                     return Response(status=200, response="ok")
@@ -72,7 +74,7 @@ class SlackBot2Endpoint(Endpoint):
                         {"type": "section", "text": {"type": "mrkdwn", "text": message}}
                     ]
                     return self._process_dify_request(
-                        message, channel, blocks, thread_ts, settings
+                        message, channel, blocks, thread_ts, settings, []
                     )
                 else:
                     return Response(status=200, response="ok")
@@ -88,15 +90,27 @@ class SlackBot2Endpoint(Endpoint):
         blocks: list,
         thread_ts: str | None,
         settings: Mapping,
+        files: list | None = None,
     ) -> Response:
         """Process request to Dify and post response to Slack"""
         token = settings.get("bot_token")
         client = WebClient(token=token)
+
+        file_data: list = []
+        if files and settings.get("enable_file_attachments"):
+            file_data = self._download_slack_files(files, client)
+            if file_data:
+                file_summary = f"\n\n添付ファイル: {', '.join([f['name'] for f in file_data])}"
+                message += file_summary
+
         try:
+            inputs = {}
+            if file_data:
+                inputs["files"] = file_data
             response = self.session.app.chat.invoke(
                 app_id=settings["app"]["app_id"],
                 query=message,
-                inputs={},
+                inputs=inputs,
                 response_mode="blocking",
             )
             try:
@@ -131,3 +145,34 @@ class SlackBot2Endpoint(Endpoint):
                 + str(err),
                 content_type="text/plain",
             )
+
+    def _download_slack_files(self, files: list, client: WebClient) -> list:
+        """Download files from Slack and return file data"""
+        downloaded_files = []
+        for file_info in files:
+            try:
+                file_id = file_info.get("id")
+                if not file_id:
+                    continue
+
+                file_response = client.files_info(file=file_id)
+                if file_response.get("ok"):
+                    file_data_response: dict = file_response.get("file", {})
+                    url_private = file_data_response.get("url_private")
+
+                    if url_private:
+                        headers = {"Authorization": f"Bearer {client.token}"}
+                        response = requests.get(url_private, headers=headers)
+
+                        if response.status_code == 200:
+                            downloaded_files.append({
+                                "name": file_data_response.get("name", "unknown"),
+                                "content": response.content,
+                                "mimetype": file_data_response.get("mimetype", "application/octet-stream"),
+                                "size": file_data_response.get("size", 0)
+                            })
+            except Exception as e:
+                print(f"Error downloading file {file_info.get('id', 'unknown')}: {e}")
+                continue
+
+        return downloaded_files
