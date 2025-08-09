@@ -104,7 +104,13 @@ class SlackBot2Endpoint(Endpoint):
         if files and settings.get("enable_file_attachments"):
             uploaded_files = self._upload_slack_files_to_dify(files, client)
             if uploaded_files:
-                file_summary = f"\n\n添付ファイル: {', '.join([f.filename for f in uploaded_files])}"
+                file_names = []
+                for file_info in uploaded_files:
+                    if isinstance(file_info, dict):
+                        file_names.append(file_info.get("filename", "unknown"))
+                    else:
+                        file_names.append("unknown")
+                file_summary = f"\n\n添付ファイル: {', '.join(file_names)}"
                 message += file_summary
 
         try:
@@ -169,14 +175,15 @@ class SlackBot2Endpoint(Endpoint):
                         response = requests.get(url_private, headers=headers)
 
                         if response.status_code == 200:
-                            dify_file = self.session.file.upload(
+                            upload_response = self.session.file.upload(
                                 filename=file_data_response.get("name", "unknown"),
                                 content=response.content,
                                 mimetype=file_data_response.get(
                                     "mimetype", "application/octet-stream"
                                 ),
                             )
-                            uploaded_files.append(dify_file)
+                            file_info = upload_response.to_app_parameter()
+                            uploaded_files.append(file_info)
             except Exception as e:
                 print(f"Error processing file {file_info.get('id', 'unknown')}: {e}")
                 continue
