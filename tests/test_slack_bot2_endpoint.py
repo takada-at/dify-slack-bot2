@@ -568,7 +568,7 @@ class TestSlackBot2Endpoint:
             "upload_file_id": "file_id_123",
             "transfer_method": "local_file",
             "type": "document",
-            "filename": "test.txt"
+            "filename": "test.txt",
         }
         mock_upload_response.to_app_parameter.return_value = mock_file_info
         endpoint.session.file.upload.return_value = mock_upload_response
