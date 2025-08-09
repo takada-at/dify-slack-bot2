@@ -563,6 +563,10 @@ class TestSlackBot2Endpoint:
         mock_requests_get.return_value.content = b"test file content"
         mock_webclient.chat_postMessage.return_value = {"ok": True}
 
+        mock_dify_file = Mock()
+        mock_dify_file.filename = "test.txt"
+        endpoint.session.file.upload.return_value = mock_dify_file
+
         endpoint.session.app.chat.invoke.return_value = {"answer": "File analyzed"}
         mock_request.get_json.return_value = app_mention_with_files_data
 
@@ -573,7 +577,7 @@ class TestSlackBot2Endpoint:
         call_args = endpoint.session.app.chat.invoke.call_args[1]
         assert "files" in call_args["inputs"]
         assert len(call_args["inputs"]["files"]) == 1
-        assert call_args["inputs"]["files"][0]["name"] == "test.txt"
+        assert call_args["inputs"]["files"][0] == mock_dify_file
 
     @patch.object(slack_bot2_module, "WebClient")
     def test_invoke_app_mention_with_files_disabled(
@@ -601,7 +605,7 @@ class TestSlackBot2Endpoint:
 
     @patch.object(slack_bot2_module, "WebClient")
     @patch("requests.get")
-    def test_download_slack_files_error_handling(
+    def test_upload_slack_files_error_handling(
         self,
         mock_requests_get: Any,
         mock_webclient_class: Any,

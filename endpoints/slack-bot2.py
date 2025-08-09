@@ -96,17 +96,17 @@ class SlackBot2Endpoint(Endpoint):
         token = settings.get("bot_token")
         client = WebClient(token=token)
 
-        file_data: list = []
+        uploaded_files: list = []
         if files and settings.get("enable_file_attachments"):
-            file_data = self._download_slack_files(files, client)
-            if file_data:
-                file_summary = f"\n\n添付ファイル: {', '.join([f['name'] for f in file_data])}"
+            uploaded_files = self._upload_slack_files_to_dify(files, client)
+            if uploaded_files:
+                file_summary = f"\n\n添付ファイル: {', '.join([f.filename for f in uploaded_files])}"
                 message += file_summary
 
         try:
             inputs = {}
-            if file_data:
-                inputs["files"] = file_data
+            if uploaded_files:
+                inputs["files"] = uploaded_files
             response = self.session.app.chat.invoke(
                 app_id=settings["app"]["app_id"],
                 query=message,
@@ -146,9 +146,9 @@ class SlackBot2Endpoint(Endpoint):
                 content_type="text/plain",
             )
 
-    def _download_slack_files(self, files: list, client: WebClient) -> list:
-        """Download files from Slack and return file data"""
-        downloaded_files = []
+    def _upload_slack_files_to_dify(self, files: list, client: WebClient) -> list:
+        """Download files from Slack and upload them to Dify"""
+        uploaded_files = []
         for file_info in files:
             try:
                 file_id = file_info.get("id")
@@ -165,14 +165,14 @@ class SlackBot2Endpoint(Endpoint):
                         response = requests.get(url_private, headers=headers)
 
                         if response.status_code == 200:
-                            downloaded_files.append({
-                                "name": file_data_response.get("name", "unknown"),
-                                "content": response.content,
-                                "mimetype": file_data_response.get("mimetype", "application/octet-stream"),
-                                "size": file_data_response.get("size", 0)
-                            })
+                            dify_file = self.session.file.upload(
+                                filename=file_data_response.get("name", "unknown"),
+                                content=response.content,
+                                mimetype=file_data_response.get("mimetype", "application/octet-stream")
+                            )
+                            uploaded_files.append(dify_file)
             except Exception as e:
-                print(f"Error downloading file {file_info.get('id', 'unknown')}: {e}")
+                print(f"Error processing file {file_info.get('id', 'unknown')}: {e}")
                 continue
 
-        return downloaded_files
+        return uploaded_files
