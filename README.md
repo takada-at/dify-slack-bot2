@@ -1,6 +1,8 @@
 # Dify Slack Bot Plugin (slack-bot2)
 
-Also available in Japanese: README.ja.md
+**Author:** takada-at
+**Version:** 0.0.1
+**Type:** extension
 
 ## Overview
 This repository contains an Extension-type Dify plugin that connects Slack to a Dify application. The plugin listens to Slack events (app mentions and optionally reaction_added), invokes a configured Dify app, and posts the result back to Slack (optionally in a thread).
@@ -9,8 +11,6 @@ This repository contains an Extension-type Dify plugin that connects Slack to a 
 - Core endpoint: endpoints/slack_bot2.py (SlackBot2Endpoint)
 - Settings schema: group/slack-bot2.yaml
 - Plugin manifest: manifest.yaml
-- Tests: tests/test_slack_bot2_endpoint.py
-- Detailed setup guide: docs/plugin-setup-guide.md
 
 ## Features
 - App mentions: Responds when users mention the bot in Slack (@bot)
@@ -19,79 +19,83 @@ This repository contains an Extension-type Dify plugin that connects Slack to a 
 - Retry control: Configure whether to process Slack retry requests
 - Error handling: Acknowledge Slack events and surface meaningful errors
 
-## Requirements
-- Python 3.12
-- Dify Plugin SDK (dify_plugin)
-- Slack SDK (slack_sdk)
-- A Slack App with proper scopes and event subscriptions
-- Access to a Dify instance and a Dify app to invoke
+## Setting Guide
+### 1. Creating Your Slack App
 
-## Quick Setup
-For full, step-by-step instructions, see docs/plugin-setup-guide.md. Below is a concise summary.
+1. Visit the [Slack API](https://api.slack.com/apps)
+2. Click "Create New App"
+3. Select "From scratch"
+4. Define your app name and target workspace
 
-1) Create a Slack App
-- Add Bot Token scopes (OAuth & Permissions):
-  - app_mentions:read
-  - chat:write
-  - reactions:read (if using reaction triggers)
-- Enable Event Subscriptions and set Request URL to the plugin endpoint:
-  - https://YOUR-DIFY-ENDPOINT/plugins/endpoints/uwu/slack-bot2/uwu
-- Subscribe to bot events:
-  - app_mention
-  - reaction_added (optional)
-- Install the app to your workspace and obtain the Bot User OAuth Token (xoxb-*)
+<img src="./_assets/step1.png" width="300" />
+<img src="./_assets/step2.png" width="300" />
 
-2) Configure the Plugin in Dify
-- Set bot_token with the Slack Bot User OAuth Token (xoxb-*)
-- Choose the Dify app to invoke for Slack messages
-- Optional settings:
-  - allow_retry: whether to process Slack retries (default: false)
-  - target_reactions: comma-separated emoji names for reaction triggers
-  - enable_thread_reply: post replies in threads when true
+### 2. Configuring the Slack App
 
-## Local Debugging
-You can connect a local plugin process to a Dify instance for debugging.
+On the "OAuth & Permissions" page, add the following scopes:
 
-1) Create a .env in the project root:
-- INSTALL_METHOD=remote
-- REMOTE_INSTALL_URL=debug.dify.ai
-- REMOTE_INSTALL_PORT=5003
-- REMOTE_INSTALL_KEY=YOUR_DEBUG_KEY
+- `app_mentions:read` - To read mention events
+- `channels:history` - To read messages
+- `chat:write` - To post messages
+- `reactions:read` - To read reaction events
 
-2) Run the plugin:
-- python -m main
+<img src="./_assets/step3.png" width="300" />
 
-Refresh the Dify UI; the plugin appears as debugging and can be used for tests.
+Then
 
-## Verification (Manual)
-- Mention: In a channel with the bot, mention it (e.g., @your-bot-name hello) and verify it replies.
-- Reaction: If configured, add a target emoji to a message and verify the bot responds.
-- Thread: If enabled, verify the response posts in the message thread.
+- Install the app to your workspace
+- Locate your "Bot User OAuth Token" in settings
 
-See docs/plugin-setup-guide.md for detailed troubleshooting steps.
+### 3. Endpoint Configuration
 
-## Development
-Install dependencies:
-- pip install -r requirements.txt
-- pip install -r requirements-dev.txt
+- Create a new endpoint with a custom name
+- Input your Bot User OAuth Token
+- Set "Allow Retry" to false (recommended to prevent duplicate messages)
+- Link to your Dify chatflow/chatbot/agent
+- Save and copy the generated endpoint URL
 
-Quality and tests:
-- ruff check .
-- mypy .
-- pytest
+For all other configuration options, please refer to the "Plugin Configuration" section below.
 
-## Project Structure
-- main.py: Initializes and runs the plugin with a 120s timeout
-- endpoints/slack-bot2.py: SlackBot2Endpoint handling Slack events and Dify integration
-- endpoints/slack-bot2.yaml: Endpoint route definition
-- group/slack-bot2.yaml: User-configurable settings schema
-- manifest.yaml: Plugin metadata and configuration
-- tests/test_slack_bot2_endpoint.py: Unit tests
-- docs/plugin-setup-guide.md: Detailed setup and configuration guide
-- GUIDE.md, CLAUDE.md: Additional development guidance
-- PRIVACY.md: Privacy policy template
+<img src="./_assets/step4.png" width="300" />
 
-## License and Author
-- Author: takada-at
-- Version: 0.0.1
-- Type: extension
+### 4. Configuring Slack App Event Subscriptions
+On the "Event Subscriptions" page:
+
+1. Enable events by checking the "Enable Events" checkbox.
+2. In the "Request URL" field, enter your plugin's endpoint URL.
+   - Format: `https://your-dify-instance.com/plugins/endpoints/`
+3. Under "Subscribe to bot events," add the following events:
+   - `app_mention` - For mentions directed at the bot
+   - `reaction_added` - For reaction additions (optional)
+
+## Plugin Configuration
+
+### 1. Basic Settings
+
+#### Bot Token
+- **Required field**
+- Enter the Bot User OAuth Token obtained from your Slack App (must start with `xoxb-`)
+- The input field is secured, with the value being encrypted upon storage
+
+#### App Selection
+- **Required field**
+- Choose the Dify app you want to use to respond to Slack messages
+- You may select from available apps in the dropdown menu
+
+### 2. Advanced Settings
+
+#### Allow Retry Requests
+- **Optional field** (default: false)
+- Determines whether to allow retry requests from Slack
+- If set to `false`, the system will automatically ignore timeout or duplicate requests
+
+#### Target Reactions
+- **Optional field**
+- Specifies reaction names to trigger a response, separated by commas
+- Example: `thumbsup,heart,fire`
+- If left empty, the system will respond to all reactions
+
+#### Enable Thread Reply
+- **Optional field** (default: false)
+- If set to `true`, replies will be posted in the original message's thread
+- If set to `false`, replies will be posted as new messages in the channel
