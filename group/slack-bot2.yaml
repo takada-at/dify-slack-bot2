@@ -44,9 +44,9 @@ settings:
       ja_JP: 対象リアクション
     placeholder:
       en_US: Comma-separated reaction names (e.g., thumbsup,heart,fire)
-      zh_Hans: 逗号分隔的反应名称 (例如: thumbsup,heart,fire)
-      pt_BR: Nomes de reações separados por vírgula (ex: thumbsup,heart,fire)
-      ja_JP: カンマ区切りのリアクション名 (例: thumbsup,heart,fire)
+      zh_Hans: "逗号分隔的反应名称 (例如: thumbsup,heart,fire)"
+      pt_BR: "Nomes de reações separados por vírgula (ex: thumbsup,heart,fire)"
+      ja_JP: "カンマ区切りのリアクション名 (例: thumbsup,heart,fire)"
   - name: enable_thread_reply
     type: boolean
     required: false
@@ -55,15 +55,6 @@ settings:
       zh_Hans: 启用线程回复
       pt_BR: Habilitar Resposta em Thread
       ja_JP: スレッド返信を有効にする
-    default: false
-  - name: enable_file_attachments
-    type: boolean
-    required: false
-    label:
-      en_US: Enable File Attachments
-      zh_Hans: 启用文件附件
-      pt_BR: Habilitar Anexos de Arquivo
-      ja_JP: ファイル添付を有効にする
     default: false
 endpoints:
   - endpoints/slack-bot2.yaml

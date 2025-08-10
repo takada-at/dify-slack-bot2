@@ -82,7 +82,7 @@ Dify の画面を更新すると、プラグインが debugging 状態で表示�
 
 ## プロジェクト構成
 - main.py: プラグイン起動（タイムアウト 120 秒）
-- endpoints/slack-bot2.py: Slack イベント処理と Dify 連携
+- endpoints/slack_bot2.py: Slack イベント処理と Dify 連携
 - endpoints/slack-bot2.yaml: エンドポイントのルート定義
 - group/slack-bot2.yaml: ユーザー設定スキーマ
 - manifest.yaml: プラグインメタデータ

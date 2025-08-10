@@ -6,7 +6,7 @@ Also available in Japanese: README.ja.md
 This repository contains an Extension-type Dify plugin that connects Slack to a Dify application. The plugin listens to Slack events (app mentions and optionally reaction_added), invokes a configured Dify app, and posts the result back to Slack (optionally in a thread).
 
 - Entry point: main.py
-- Core endpoint: endpoints/slack-bot2.py (SlackBot2Endpoint)
+- Core endpoint: endpoints/slack_bot2.py (SlackBot2Endpoint)
 - Settings schema: group/slack-bot2.yaml
 - Plugin manifest: manifest.yaml
 - Tests: tests/test_slack_bot2_endpoint.py
