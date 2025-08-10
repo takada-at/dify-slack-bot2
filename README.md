@@ -68,11 +68,6 @@ On the "Event Subscriptions" page:
    - `app_mention` - For mentions directed at the bot
    - `reaction_added` - For reaction additions (optional)
 
-#### App Selection
-- **Required field**
-- Choose the Dify app you want to use to respond to Slack messages
-- You may select from available apps via the dropdown menu
-
 ## Plugin Configuration
 
 ### 1. Basic Settings
