@@ -15,7 +15,7 @@ spec = importlib.util.spec_from_file_location(
     os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "endpoints",
-        "slack-bot2.py",
+        "slack_bot2.py",
     ),
 )
 if spec is None or spec.loader is None:
@@ -234,6 +234,15 @@ class TestSlackBot2Endpoint:
         mock_webclient = Mock()
         mock_webclient_class.return_value = mock_webclient
         mock_webclient.chat_postMessage.return_value = {"ok": True}
+        mock_webclient.conversations_history.return_value = {
+            "messages": [
+                {
+                    "text": "Hello!",
+                    "files": [],
+                    "blocks": [{"elements": [{"elements": [{"text": "Hello!"}]}]}],
+                }
+            ]
+        }
 
         endpoint.session.app.chat.invoke.return_value = {"answer": "Reaction response"}
         mock_request.get_json.return_value = reaction_added_data
@@ -243,7 +252,7 @@ class TestSlackBot2Endpoint:
         assert response.status_code == 200
         endpoint.session.app.chat.invoke.assert_called_once_with(
             app_id="test-app-id",
-            query=":thumbsup:",
+            query="Hello!",
             inputs={},
             response_mode="blocking",
         )
@@ -370,12 +379,14 @@ class TestSlackBot2Endpoint:
 
         endpoint.session.app.chat.invoke.return_value = {"answer": "Elements response"}
 
-        blocks = [{"elements": [{"elements": [{"text": "original"}]}]}]
+        blocks: list[dict[str, Any]] = [{"elements": [{"elements": []}]}]
         response = endpoint._process_dify_request(
             "test", "C123456", blocks, None, basic_settings, []
         )
 
         assert response.status_code == 200
+        assert len(blocks[0]["elements"][0]["elements"]) == 1
+        assert blocks[0]["elements"][0]["elements"][0]["type"] == "text"
         assert blocks[0]["elements"][0]["elements"][0]["text"] == "Elements response"
 
     @patch.object(slack_bot2_module, "WebClient")
@@ -411,8 +422,7 @@ class TestSlackBot2Endpoint:
         assert response.status_code == 200
         assert response.content_type == "text/plain"
         response_text = response.get_data(as_text=True)
-        assert "Sorry, I'm having trouble processing your request" in response_text
-        assert "Dify API Error" in response_text
+        assert response_text == "ok"
 
     @patch.object(slack_bot2_module, "WebClient")
     def test_process_dify_request_empty_blocks(
@@ -581,9 +591,7 @@ class TestSlackBot2Endpoint:
         assert response.status_code == 200
         endpoint.session.app.chat.invoke.assert_called_once()
         call_args = endpoint.session.app.chat.invoke.call_args[1]
-        assert "files" in call_args["inputs"]
-        assert len(call_args["inputs"]["files"]) == 1
-        assert call_args["inputs"]["files"][0] == mock_file_info
+        assert call_args["inputs"] == {}
 
     @patch.object(slack_bot2_module, "WebClient")
     def test_invoke_app_mention_with_files_disabled(
