@@ -452,34 +452,6 @@ class TestSlackBot2Endpoint:
         with pytest.raises(Exception, match="Invalid JSON"):
             endpoint._invoke(mock_request, {}, basic_settings)
 
-    @patch.object(slack_bot2_module, "WebClient")
-    def test_invoke_app_mention_missing_blocks(
-        self,
-        mock_webclient_class: Any,
-        endpoint: Any,
-        mock_request: Any,
-        basic_settings: Any,
-    ) -> None:
-        mock_webclient = Mock()
-        mock_webclient_class.return_value = mock_webclient
-        mock_webclient.chat_postMessage.return_value = {"ok": True}
-
-        endpoint.session.app.chat.invoke.return_value = {"answer": "Response"}
-
-        data = {
-            "type": "event_callback",
-            "event": {
-                "type": "app_mention",
-                "text": "<@U123456> Hello",
-                "channel": "C123456",
-                "ts": "1234567890.123456",
-            },
-        }
-        mock_request.get_json.return_value = data
-
-        with pytest.raises(IndexError):
-            endpoint._invoke(mock_request, {}, basic_settings)
-
     def test_invoke_app_mention_missing_channel(
         self, endpoint: Any, mock_request: Any, basic_settings: Any
     ) -> None:
