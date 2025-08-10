@@ -164,7 +164,7 @@ class SlackBot2Endpoint(Endpoint):
                 response="ok",
                 content_type="application/json",
             )
-        except Exception:
+        except Exception as e:
             err = traceback.format_exc()
             logger.error("Error processing request: %s: %s", type(e).__name__, str(e))
             logger.error("Traceback: %s", err)
