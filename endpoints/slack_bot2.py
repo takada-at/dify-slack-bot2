@@ -39,16 +39,22 @@ class SlackBot2Endpoint(Endpoint):
             event = data.get("event")
             if event.get("type") == "app_mention":
                 message = event.get("text", "")
-                files = (
-                    event.get("files", [])
-                    if settings.get("enable_file_attachments")
-                    else []
-                )
+                files = event.get("files", [])
                 if message.startswith("<@"):
                     message = message.split("> ", 1)[1] if "> " in message else message
                     channel = event.get("channel", "")
                     blocks = event.get("blocks", [])
-                    blocks[0]["elements"][0]["elements"] = []
+                    if (
+                        isinstance(blocks, list)
+                        and len(blocks) > 0
+                        and isinstance(blocks[0], dict)
+                        and "elements" in blocks[0]
+                        and isinstance(blocks[0]["elements"], list)
+                        and len(blocks[0]["elements"]) > 0
+                        and isinstance(blocks[0]["elements"][0], dict)
+                        and "elements" in blocks[0]["elements"][0]
+                    ):
+                        blocks[0]["elements"][0]["elements"] = []
                     thread_ts = (
                         event.get("ts") if settings.get("enable_thread_reply") else None
                     )
@@ -96,13 +102,20 @@ class SlackBot2Endpoint(Endpoint):
             )
             if response and response.get("messages"):
                 message = response["messages"][0]
-                files = (
-                    message.get("files", [])
-                    if settings.get("enable_file_attachments")
-                    else []
-                )
+                files = message.get("files", [])
                 blocks = message.get("blocks", [])
-                blocks[0]["elements"][0]["elements"] = []
+                if (
+                    isinstance(blocks, list)
+                    and len(blocks) > 0
+                    and isinstance(blocks[0], dict)
+                    and "elements" in blocks[0]
+                    and isinstance(blocks[0]["elements"], list)
+                    and len(blocks[0]["elements"]) > 0
+                    and isinstance(blocks[0]["elements"][0], dict)
+                    and "elements" in blocks[0]["elements"][0]
+                    and isinstance(blocks[0]["elements"][0]["elements"], list)
+                ):
+                    blocks[0]["elements"][0]["elements"] = []
                 message_text = message.get("text", "")
                 return self._process_dify_request(
                     message_text, channel, blocks, thread_ts, settings, files
@@ -153,7 +166,8 @@ class SlackBot2Endpoint(Endpoint):
             )
         except Exception:
             err = traceback.format_exc()
-            logger.error("Error processing request: %s", err)
+            logger.error("Error processing request: %s: %s", type(e).__name__, str(e))
+            logger.error("Traceback: %s", err)
             return Response(
                 status=200,
                 response="ok",
