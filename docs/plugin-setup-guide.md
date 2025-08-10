@@ -36,7 +36,7 @@
 
 1. 「Enable Events」をオンにする
 2. 「Request URL」にプラグインのエンドポイントURLを設定
-   - 形式: `https://your-dify-instance.com/plugins/endpoints/uwu/slack-bot2/uwu`
+   - 形式: `https://your-dify-instance.com/plugins/endpoints/`
 3. 「Subscribe to bot events」で以下のイベントを追加：
    - `app_mention` - ボットへのメンション
    - `reaction_added` - リアクション追加（オプション）
