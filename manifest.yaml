@@ -8,10 +8,10 @@ label:
   zh_Hans: slack-bot2
   pt_BR: slack-bot2
 description:
-  en_US: dify slack bot2
-  ja_JP: dify slack bot2
-  zh_Hans: dify slack bot2
-  pt_BR: dify slack bot2
+  en_US: This Slack Bot receives messages from Slack as input for Dify's Chatflow/Chatbot/Agent. In addition to app mentions, it can also trigger actions based on reactions, and supports posting messages to threads when sending messages to Slack.
+  ja_JP: このSlack Botは、SlackからのメッセージをDifyのChatflow/Chatbot/Agentへの入力として受け取ります。app_mentionにくわえ、reactionで動作させることも可能であり、Slackにメッセージを送信する際、スレッドへの投稿もサポートします。
+  zh_Hans: 这个 Slack Bot 将从 Slack 接收消息并作为输入传递给 Dify 的 Chatflow/Chatbot/Agent。除了应用提及外，还可以通过反应来触发它，同时支持在发送 Slack 消息时在线程中发布内容。
+  pt_BR: Este Slack Bot recebe mensagens do Slack como entrada para o Chatflow/Chatbot/Agent do Dify. Além do app_mention, também é possível operá-lo com reação e, ao enviar mensagens para o Slack, ele também suporta postagens em threads.
 icon: icon.svg
 icon_dark: icon-dark.svg
 resource:
