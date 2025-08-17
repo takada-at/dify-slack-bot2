@@ -117,7 +117,6 @@ class SlackBot2Endpoint(Endpoint):
             # thread message
             return client.conversations_replies(
                 channel=channel,
-                oldest=message_ts,
                 ts=message_ts,
                 inclusive=True,
                 limit=1,
