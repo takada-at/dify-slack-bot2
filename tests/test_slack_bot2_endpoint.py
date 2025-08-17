@@ -176,7 +176,7 @@ class TestSlackBot2Endpoint:
             query="Hello bot!",
             inputs={
                 "channel": "C123456",
-                "thread_ts": None,
+                "message_ts": "1234567890.123456",
                 "event_type": "app_mention",
                 "reaction": None,
             },
@@ -239,6 +239,9 @@ class TestSlackBot2Endpoint:
         mock_webclient = Mock()
         mock_webclient_class.return_value = mock_webclient
         mock_webclient.chat_postMessage.return_value = {"ok": True}
+        mock_webclient.chat_getPermalink.return_value = {
+            "permalink": "https://slack.com/archives/C123456/p1234567890123456"
+        }
         mock_webclient.conversations_history.return_value = {
             "messages": [
                 {
@@ -260,7 +263,7 @@ class TestSlackBot2Endpoint:
             query="Hello!",
             inputs={
                 "channel": "C123456",
-                "thread_ts": None,
+                "message_ts": "1234567890.123456",
                 "event_type": "reaction_added",
                 "reaction": "thumbsup",
             },
@@ -365,6 +368,7 @@ class TestSlackBot2Endpoint:
     def test_process_dify_request_with_thread_ts(
         self, mock_webclient_class: Any, endpoint: Any, basic_settings: Any
     ) -> None:
+        basic_settings["enable_thread_reply"] = True
         mock_webclient = Mock()
         mock_webclient_class.return_value = mock_webclient
         mock_webclient.chat_postMessage.return_value = {"ok": True}
@@ -580,7 +584,7 @@ class TestSlackBot2Endpoint:
         call_args = endpoint.session.app.chat.invoke.call_args[1]
         assert call_args["inputs"] == {
             "channel": "C123456",
-            "thread_ts": None,
+            "message_ts": "1234567890.123456",
             "event_type": "app_mention",
             "reaction": None,
         }
@@ -611,7 +615,7 @@ class TestSlackBot2Endpoint:
         call_args = endpoint.session.app.chat.invoke.call_args[1]
         assert call_args["inputs"] == {
             "channel": "C123456",
-            "thread_ts": None,
+            "message_ts": "1234567890.123456",
             "event_type": "app_mention",
             "reaction": None,
         }
@@ -654,7 +658,7 @@ class TestSlackBot2Endpoint:
         call_args = endpoint.session.app.chat.invoke.call_args[1]
         assert call_args["inputs"] == {
             "channel": "C123456",
-            "thread_ts": None,
+            "message_ts": "1234567890.123456",
             "event_type": "app_mention",
             "reaction": None,
         }

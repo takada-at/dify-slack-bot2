@@ -3,6 +3,7 @@ import logging
 import traceback
 from collections.abc import Mapping
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from dify_plugin import Endpoint
 from dify_plugin.config.logger_format import plugin_logger_handler
@@ -55,14 +56,12 @@ class SlackBot2Endpoint(Endpoint):
                         and "elements" in blocks[0]["elements"][0]
                     ):
                         blocks[0]["elements"][0]["elements"] = []
-                    thread_ts = (
-                        event.get("ts") if settings.get("enable_thread_reply") else None
-                    )
+                    message_ts = event.get("ts")
                     return self._process_dify_request(
                         message=message,
                         channel=channel,
                         blocks=blocks,
-                        thread_ts=thread_ts,
+                        message_ts=message_ts,
                         settings=settings,
                         event_type="app_mention",
                         reaction=None,
@@ -83,11 +82,8 @@ class SlackBot2Endpoint(Endpoint):
                 if item.get("type") == "message":
                     channel = item.get("channel", "")
                     message_ts = item.get("ts", "")
-                    thread_ts = (
-                        message_ts if settings.get("enable_thread_reply") else None
-                    )
                     return self._on_reaction(
-                        channel, message_ts, thread_ts, settings, event.get("reaction")
+                        channel, message_ts, settings, event.get("reaction")
                     )
                 else:
                     return Response(status=200, response="ok")
@@ -96,19 +92,45 @@ class SlackBot2Endpoint(Endpoint):
         else:
             return Response(status=200, response="ok")
 
+    def _get_original(self, client: WebClient, channel: str, message_ts: str):
+        """Fetch Original Message From Slack."""
+        permalink_resp = client.chat_getPermalink(
+            channel=channel, message_ts=message_ts
+        )
+        if not permalink_resp:
+            return None
+        permalink = permalink_resp["permalink"]
+        parsed = urlparse(permalink)
+        thread_ts = None
+        if parsed.query:
+            params = parse_qs(parsed.query)
+            thread_ts = params.get("thread_ts")
+        if thread_ts is None or message_ts == thread_ts:
+            return client.conversations_history(
+                channel=channel, oldest=message_ts, inclusive=True, limit=1
+            )
+        else:
+            # thread message
+            return client.conversations_replies(
+                channel=channel,
+                oldest=message_ts,
+                ts=message_ts,
+                inclusive=True,
+                limit=1,
+            )
+
     def _on_reaction(
         self,
         channel: str,
         message_ts: str,
-        thread_ts: str | None,
         settings: Mapping,
         reaction: str,
     ) -> Response:
         try:
             token = settings.get("bot_token")
             client = WebClient(token=token)
-            response = client.conversations_history(
-                channel=channel, latest=message_ts, limit=1, inclusive=True
+            response = self._get_original(
+                client=client, channel=channel, message_ts=message_ts
             )
             if response and response.get("messages"):
                 message = response["messages"][0]
@@ -131,7 +153,7 @@ class SlackBot2Endpoint(Endpoint):
                     message=message_text,
                     channel=channel,
                     blocks=blocks,
-                    thread_ts=thread_ts,
+                    message_ts=message_ts,
                     settings=settings,
                     event_type="reaction_added",
                     reaction=reaction,
@@ -141,13 +163,17 @@ class SlackBot2Endpoint(Endpoint):
         except SlackApiError as e:
             logger.error("Error fetching message: %s", e.response["error"])
             return Response(status=200, response="ok")
+        except Exception as e:
+            err = traceback.format_exc()
+            logger.error("Error processing request: %s: %s", type(e).__name__, str(e))
+            logger.error("Traceback: %s", err)
 
     def _process_dify_request(
         self,
         message: str,
         channel: str,
         blocks: list,
-        thread_ts: str | None,
+        message_ts: str,
         settings: Mapping,
         event_type: str,
         reaction: str | None = None,
@@ -155,11 +181,12 @@ class SlackBot2Endpoint(Endpoint):
     ) -> Response:
         """Process request to Dify and post response to Slack"""
         try:
+            enable_thread = settings.get("enable_thread_reply", False)
             token = settings.get("bot_token")
             client = WebClient(token=token)
             inputs: dict[str, Any] = {
                 "channel": channel,
-                "thread_ts": thread_ts,
+                "message_ts": message_ts,
                 "event_type": event_type,
                 "reaction": reaction,
             }
@@ -179,8 +206,8 @@ class SlackBot2Endpoint(Endpoint):
                 "text": response.get("answer"),
                 "blocks": blocks,
             }
-            if thread_ts:
-                post_message_args["thread_ts"] = thread_ts
+            if enable_thread:
+                post_message_args["thread_ts"] = message_ts
 
             client.chat_postMessage(**post_message_args)
             return Response(
