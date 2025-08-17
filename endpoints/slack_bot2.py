@@ -59,7 +59,14 @@ class SlackBot2Endpoint(Endpoint):
                         event.get("ts") if settings.get("enable_thread_reply") else None
                     )
                     return self._process_dify_request(
-                        message, channel, blocks, thread_ts, settings, files
+                        message=message,
+                        channel=channel,
+                        blocks=blocks,
+                        thread_ts=thread_ts,
+                        settings=settings,
+                        event_type="app_mention",
+                        reaction=None,
+                        files=files,
                     )
                 else:
                     return Response(status=200, response="ok")
@@ -79,7 +86,9 @@ class SlackBot2Endpoint(Endpoint):
                     thread_ts = (
                         message_ts if settings.get("enable_thread_reply") else None
                     )
-                    return self._on_reaction(channel, message_ts, thread_ts, settings)
+                    return self._on_reaction(
+                        channel, message_ts, thread_ts, settings, event.get("reaction")
+                    )
                 else:
                     return Response(status=200, response="ok")
             else:
@@ -93,6 +102,7 @@ class SlackBot2Endpoint(Endpoint):
         message_ts: str,
         thread_ts: str | None,
         settings: Mapping,
+        reaction: str,
     ) -> Response:
         try:
             token = settings.get("bot_token")
@@ -118,7 +128,14 @@ class SlackBot2Endpoint(Endpoint):
                     blocks[0]["elements"][0]["elements"] = []
                 message_text = message.get("text", "")
                 return self._process_dify_request(
-                    message_text, channel, blocks, thread_ts, settings, files
+                    message=message_text,
+                    channel=channel,
+                    blocks=blocks,
+                    thread_ts=thread_ts,
+                    settings=settings,
+                    event_type="reaction_added",
+                    reaction=reaction,
+                    files=files,
                 )
             return Response(status=200, response="ok")
         except SlackApiError as e:
@@ -132,13 +149,20 @@ class SlackBot2Endpoint(Endpoint):
         blocks: list,
         thread_ts: str | None,
         settings: Mapping,
+        event_type: str,
+        reaction: str | None = None,
         files: list | None = None,
     ) -> Response:
         """Process request to Dify and post response to Slack"""
         try:
             token = settings.get("bot_token")
             client = WebClient(token=token)
-            inputs: dict[str, Any] = {}
+            inputs: dict[str, Any] = {
+                "channel": channel,
+                "thread_ts": thread_ts,
+                "event_type": event_type,
+                "reaction": reaction,
+            }
             response = self.session.app.chat.invoke(
                 app_id=settings["app"]["app_id"],
                 query=message,

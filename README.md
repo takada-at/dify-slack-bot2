@@ -87,7 +87,7 @@ On the "Event Subscriptions" page:
 #### Allow Retry Requests
 - **Optional field** (default: false)
 - Determines whether to allow retry requests from Slack
-- If set to `false`, the system will automatically ignore timeout or duplicate requests
+- If set to `false`, the system will automatically ignore timeout or duplicate requests(Recommended)
 
 #### Target Reactions
 - **Optional field**
@@ -99,3 +99,16 @@ On the "Event Subscriptions" page:
 - **Optional field** (default: false)
 - If set to `true`, replies will be posted in the original message's thread
 - If set to `false`, replies will be posted as new messages in the channel
+
+## Usage
+The bot will respond when you mention it or use a specific emoji to react to a message.
+
+### Input Parameters
+When triggered, `sys.query` contains the original Slack message. And the bot receives the following inputs data from the event.
+
+| Parameter | Description | Type |
+|-----------|-------------|------|
+| channel | The ID of the channel where the event happened. | string |
+| thread_ts | The timestamp of the thread. This is present if the event occurred in a thread, allowing the bot to reply in that thread. | string (optional) |
+| event_type | Indicates how the bot was triggered. Can be `app_mention` or `reaction_added`. | string |
+| reaction | The name of the emoji used for the reaction (e.g., `eye`). This is present only for `reaction_added` events. | string (optional) |

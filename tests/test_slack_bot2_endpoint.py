@@ -174,7 +174,12 @@ class TestSlackBot2Endpoint:
         endpoint.session.app.chat.invoke.assert_called_once_with(
             app_id="test-app-id",
             query="Hello bot!",
-            inputs={},
+            inputs={
+                "channel": "C123456",
+                "thread_ts": None,
+                "event_type": "app_mention",
+                "reaction": None,
+            },
             response_mode="blocking",
         )
         mock_webclient.chat_postMessage.assert_called_once()
@@ -253,7 +258,12 @@ class TestSlackBot2Endpoint:
         endpoint.session.app.chat.invoke.assert_called_once_with(
             app_id="test-app-id",
             query="Hello!",
-            inputs={},
+            inputs={
+                "channel": "C123456",
+                "thread_ts": None,
+                "event_type": "reaction_added",
+                "reaction": "thumbsup",
+            },
             response_mode="blocking",
         )
 
@@ -341,7 +351,7 @@ class TestSlackBot2Endpoint:
 
         blocks = [{"text": {"text": "original"}}]
         response = endpoint._process_dify_request(
-            "test message", "C123456", blocks, None, basic_settings
+            "test message", "C123456", blocks, None, basic_settings, "app_mention"
         )
 
         assert response.status_code == 200
@@ -363,7 +373,12 @@ class TestSlackBot2Endpoint:
 
         blocks = [{"text": {"text": "original"}}]
         endpoint._process_dify_request(
-            "test", "C123456", blocks, "1234567890.123456", basic_settings, []
+            "test",
+            "C123456",
+            blocks,
+            "1234567890.123456",
+            basic_settings,
+            "app_mention",
         )
 
         call_args = mock_webclient.chat_postMessage.call_args[1]
@@ -381,7 +396,7 @@ class TestSlackBot2Endpoint:
 
         blocks: list[dict[str, Any]] = [{"elements": [{"elements": []}]}]
         response = endpoint._process_dify_request(
-            "test", "C123456", blocks, None, basic_settings, []
+            "test", "C123456", blocks, None, basic_settings, "app_mention"
         )
 
         assert response.status_code == 200
@@ -402,7 +417,7 @@ class TestSlackBot2Endpoint:
         endpoint.session.app.chat.invoke.return_value = {"answer": "Test response"}
 
         response = endpoint._process_dify_request(
-            "test", "C123456", [], None, basic_settings, []
+            "test", "C123456", [], None, basic_settings, "app_mention"
         )
         assert response.status_code == 200
 
@@ -416,7 +431,7 @@ class TestSlackBot2Endpoint:
         endpoint.session.app.chat.invoke.side_effect = Exception("Dify API Error")
 
         response = endpoint._process_dify_request(
-            "test", "C123456", [], None, basic_settings, []
+            "test", "C123456", [], None, basic_settings, "app_mention"
         )
 
         assert response.status_code == 200
@@ -437,7 +452,7 @@ class TestSlackBot2Endpoint:
         }
 
         response = endpoint._process_dify_request(
-            "test", "C123456", [], None, basic_settings, []
+            "test", "C123456", [], None, basic_settings, "app_mention"
         )
 
         assert response.status_code == 200
@@ -563,7 +578,12 @@ class TestSlackBot2Endpoint:
         assert response.status_code == 200
         endpoint.session.app.chat.invoke.assert_called_once()
         call_args = endpoint.session.app.chat.invoke.call_args[1]
-        assert call_args["inputs"] == {}
+        assert call_args["inputs"] == {
+            "channel": "C123456",
+            "thread_ts": None,
+            "event_type": "app_mention",
+            "reaction": None,
+        }
 
     @patch.object(slack_bot2_module, "WebClient")
     def test_invoke_app_mention_with_files_disabled(
@@ -589,7 +609,12 @@ class TestSlackBot2Endpoint:
         assert response.status_code == 200
         endpoint.session.app.chat.invoke.assert_called_once()
         call_args = endpoint.session.app.chat.invoke.call_args[1]
-        assert call_args["inputs"] == {}
+        assert call_args["inputs"] == {
+            "channel": "C123456",
+            "thread_ts": None,
+            "event_type": "app_mention",
+            "reaction": None,
+        }
 
     @patch.object(slack_bot2_module, "WebClient")
     @patch("requests.get")
@@ -627,4 +652,9 @@ class TestSlackBot2Endpoint:
         assert response.status_code == 200
         endpoint.session.app.chat.invoke.assert_called_once()
         call_args = endpoint.session.app.chat.invoke.call_args[1]
-        assert call_args["inputs"] == {}
+        assert call_args["inputs"] == {
+            "channel": "C123456",
+            "thread_ts": None,
+            "event_type": "app_mention",
+            "reaction": None,
+        }
