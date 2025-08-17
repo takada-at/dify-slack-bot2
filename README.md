@@ -109,6 +109,6 @@ When triggered, `sys.query` contains the original Slack message. And the bot rec
 | Parameter | Description | Type |
 |-----------|-------------|------|
 | channel | The ID of the channel where the event happened. | string |
-| thread_ts | The timestamp of the thread. This is present if the event occurred in a thread, allowing the bot to reply in that thread. | string (optional) |
+| message_ts | The timestamp of the message. | string |
 | event_type | Indicates how the bot was triggered. Can be `app_mention` or `reaction_added`. | string |
 | reaction | The name of the emoji used for the reaction (e.g., `eye`). This is present only for `reaction_added` events. | string (optional) |

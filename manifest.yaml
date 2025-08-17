@@ -38,7 +38,7 @@ plugins:
   endpoints:
     - group/slack-bot2.yaml
 meta:
-  version: 0.0.1
+  version: 0.0.2
   arch:
     - amd64
     - arm64
