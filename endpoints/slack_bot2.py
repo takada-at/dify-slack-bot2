@@ -9,6 +9,7 @@ from dify_plugin import Endpoint
 from dify_plugin.config.logger_format import plugin_logger_handler
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+from slack_sdk.web.slack_response import SlackResponse
 from werkzeug import Request, Response
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,9 @@ class SlackBot2Endpoint(Endpoint):
         else:
             return Response(status=200, response="ok")
 
-    def _get_original(self, client: WebClient, channel: str, message_ts: str):
+    def _get_original(
+        self, client: WebClient, channel: str, message_ts: str
+    ) -> SlackResponse | None:
         """Fetch Original Message From Slack."""
         permalink_resp = client.chat_getPermalink(
             channel=channel, message_ts=message_ts
@@ -104,7 +107,8 @@ class SlackBot2Endpoint(Endpoint):
         thread_ts = None
         if parsed.query:
             params = parse_qs(parsed.query)
-            thread_ts = params.get("thread_ts")
+            thread_ts_list = params.get("thread_ts")
+            thread_ts = thread_ts_list[0] if thread_ts_list else None
         if thread_ts is None or message_ts == thread_ts:
             return client.conversations_history(
                 channel=channel, oldest=message_ts, inclusive=True, limit=1
@@ -167,6 +171,7 @@ class SlackBot2Endpoint(Endpoint):
             err = traceback.format_exc()
             logger.error("Error processing request: %s: %s", type(e).__name__, str(e))
             logger.error("Traceback: %s", err)
+            return Response(status=200, response="ok")
 
     def _process_dify_request(
         self,
