@@ -1,7 +1,7 @@
 # Dify Slack Bot Plugin (slack-bot2)
 
 **Author:** takada-at
-**Version:** 0.0.1
+**Version:** 0.0.2
 **Type:** extension
 
 ## Overview
