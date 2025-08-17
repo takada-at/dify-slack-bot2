@@ -60,7 +60,7 @@ The plugin follows Dify's extension plugin architecture:
 3. **Configuration**: 
    - `manifest.yaml` - Plugin metadata and resource configuration
    - `group/slack-bot2.yaml` - Settings schema and endpoint registration
-   - `endpoints/slack-bot2.yaml` - Endpoint path configuration
+   - `endpoints/slack_bot2.yaml` - Endpoint path configuration
 
 ### Event Processing Flow
 1. Slack sends events to the endpoint (`/uwu/slack-bot2/uwu`)

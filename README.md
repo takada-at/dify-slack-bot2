@@ -104,7 +104,7 @@ On the "Event Subscriptions" page:
 The bot will respond when you mention it or use a specific emoji to react to a message.
 
 ### Input Parameters
-When triggered, the bot receives the following data from the event.
+When triggered, `sys.query` contains the original Slack message. And the bot receives the following inputs data from the event.
 
 | Parameter | Description | Type |
 |-----------|-------------|------|
