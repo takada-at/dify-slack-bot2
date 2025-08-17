@@ -2,7 +2,7 @@ import json
 import logging
 import traceback
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from dify_plugin import Endpoint
 from dify_plugin.config.logger_format import plugin_logger_handler
@@ -150,7 +150,7 @@ class SlackBot2Endpoint(Endpoint):
         thread_ts: str | None,
         settings: Mapping,
         event_type: str,
-        reaction: Optional[str] = None,
+        reaction: str | None = None,
         files: list | None = None,
     ) -> Response:
         """Process request to Dify and post response to Slack"""
